@@ -1,17 +1,24 @@
 /**
- * Field-notebook HUD (plan §4): paper panels, stamped mono type, hand-feel.
- * Marigold amber is reserved for player agency — here that means the
- * crosshair and accents, never world features.
+ * Field-notebook HUD (plan §4): paper panels, stamped mono type. Marigold
+ * amber is reserved for player agency — crosshair, hotbar selection, accents.
  */
 
 import { useEffect, useState } from "react";
-import { localToLonLat, type ZoneSpec } from "@ruderal/shared";
-import { headingLabel, playerStatus } from "../player/status";
+import { BLOCK_COLOR, Block, localToLonLat, type ZoneSpec } from "@ruderal/shared";
+import { editorStatus, headingLabel, netStatus, playerStatus } from "../player/status";
 
 const PAPER = "#f4efe3";
 const INK = "#3a352c";
 const BORDER = "#b8b2a7";
 const AMBER = "#e8a33d";
+
+const HOTBAR: Array<{ b: number; label: string }> = [
+  { b: Block.Brick, label: "brick" },
+  { b: Block.BrickDark, label: "dark brick" },
+  { b: Block.Wood, label: "wood" },
+  { b: Block.Concrete, label: "concrete" },
+  { b: Block.Moss, label: "moss" },
+];
 
 const panelStyle: React.CSSProperties = {
   position: "fixed",
@@ -28,6 +35,11 @@ const panelStyle: React.CSSProperties = {
   pointerEvents: "none",
 };
 
+function cssColor(b: number): string {
+  const c = BLOCK_COLOR[b];
+  return `rgb(${Math.round(c[0] * 255)}, ${Math.round(c[1] * 255)}, ${Math.round(c[2] * 255)})`;
+}
+
 interface HudProps {
   spec: ZoneSpec;
   loading: boolean;
@@ -35,12 +47,13 @@ interface HudProps {
 }
 
 export function Hud({ spec, loading, progress }: HudProps) {
-  const [status, setStatus] = useState({ ...playerStatus });
+  const [, force] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setStatus({ ...playerStatus }), 150);
+    const t = setInterval(() => force((n) => n + 1), 150);
     return () => clearInterval(t);
   }, []);
 
+  const status = playerStatus;
   const { lon, lat } = localToLonLat(spec, status.x, status.z);
 
   return (
@@ -53,19 +66,69 @@ export function Hud({ spec, loading, progress }: HudProps) {
         </div>
       </div>
 
-      {/* position readout */}
-      {status.locked && (
-        <div style={{ ...panelStyle, bottom: 16, right: 16, textAlign: "right" }}>
-          <div>
-            {headingLabel(status.yaw)} · {Math.floor(status.x)}, {Math.floor(status.y)}, {Math.floor(status.z)}
-          </div>
-          {status.swimming && <div style={{ color: "#3e8e7e" }}>~ swimming ~</div>}
+      {/* net status */}
+      <div style={{ ...panelStyle, top: 16, right: 16, textAlign: "right" }}>
+        <div>
+          {netStatus.connected ? `${netStatus.players} online · ${netStatus.pingMs} ms` : "— offline —"}
         </div>
-      )}
+        {status.locked && (
+          <div style={{ opacity: 0.75 }}>
+            {headingLabel(status.yaw)} · {Math.floor(status.x)}, {Math.floor(status.y)}, {Math.floor(status.z)}
+            {status.swimming ? " · ~swimming~" : ""}
+          </div>
+        )}
+      </div>
 
       {/* attribution — ODbL requires it, and we'd owe it anyway */}
       <div style={{ ...panelStyle, bottom: 16, left: 16, fontSize: 10, opacity: 0.85 }}>
         map data © OpenStreetMap contributors · Overture Maps Foundation · elevation: Terrain Tiles (Mapzen/AWS)
+      </div>
+
+      {/* hotbar */}
+      <div
+        style={{
+          position: "fixed",
+          bottom: 16,
+          left: "50%",
+          transform: "translateX(-50%)",
+          display: "flex",
+          gap: 6,
+          pointerEvents: "none",
+        }}
+      >
+        {HOTBAR.map((slot, i) => {
+          const selected = editorStatus.selected === slot.b;
+          const count = editorStatus.inv[String(slot.b)] ?? 0;
+          return (
+            <div
+              key={slot.b}
+              style={{
+                width: 56,
+                background: PAPER,
+                border: `2px solid ${selected ? AMBER : BORDER}`,
+                borderRadius: 2,
+                padding: "4px 6px",
+                textAlign: "center",
+                color: INK,
+                fontSize: 10,
+                letterSpacing: "0.03em",
+                opacity: count > 0 ? 1 : 0.55,
+              }}
+            >
+              <div
+                style={{
+                  height: 18,
+                  background: cssColor(slot.b),
+                  borderRadius: 1,
+                  border: `1px solid rgba(58,53,44,0.35)`,
+                }}
+              />
+              <div style={{ marginTop: 2 }}>
+                {i + 1} · {count}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* controls hint */}
@@ -73,34 +136,81 @@ export function Hud({ spec, loading, progress }: HudProps) {
         <div
           style={{
             ...panelStyle,
-            bottom: 72,
+            bottom: 96,
             left: "50%",
             transform: "translateX(-50%)",
             borderBottom: `3px solid ${AMBER}`,
             fontSize: 13,
+            textAlign: "center",
           }}
         >
-          click to enter — WASD move · shift run · space jump · esc release
+          click to enter — WASD move · shift run · space jump
+          <br />
+          hold LMB break · RMB place · Q throw · 1–5 select · esc release
         </div>
       )}
 
-      {/* crosshair */}
+      {/* crosshair + break progress */}
       {status.locked && (
+        <>
+          <div
+            style={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              width: 4,
+              height: 4,
+              marginLeft: -2,
+              marginTop: -2,
+              borderRadius: "50%",
+              background: AMBER,
+              boxShadow: "0 0 3px rgba(58,53,44,0.6)",
+              pointerEvents: "none",
+            }}
+          />
+          {editorStatus.breakP !== null && (
+            <div
+              style={{
+                position: "fixed",
+                top: "calc(50% + 14px)",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: 44,
+                height: 5,
+                background: "rgba(58,53,44,0.35)",
+                borderRadius: 2,
+                pointerEvents: "none",
+              }}
+            >
+              <div
+                style={{
+                  width: `${Math.round(editorStatus.breakProgress * 100)}%`,
+                  height: "100%",
+                  background: AMBER,
+                  borderRadius: 2,
+                }}
+              />
+            </div>
+          )}
+        </>
+      )}
+
+      {/* disconnected overlay */}
+      {!netStatus.connected && !loading && (
         <div
           style={{
             position: "fixed",
-            top: "50%",
-            left: "50%",
-            width: 4,
-            height: 4,
-            marginLeft: -2,
-            marginTop: -2,
-            borderRadius: "50%",
-            background: AMBER,
-            boxShadow: "0 0 3px rgba(58,53,44,0.6)",
-            pointerEvents: "none",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(58,53,44,0.45)",
           }}
-        />
+        >
+          <div style={{ ...panelStyle, position: "static", borderTop: `3px solid #8c4a32` }}>
+            connection lost — reload to rejoin
+          </div>
+        </div>
       )}
 
       {/* loading overlay */}
