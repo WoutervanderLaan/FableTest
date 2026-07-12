@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.local
+.env
+.DS_Store
+
+# baker source-data cache (refetch via packages/baker/scripts/fetch-overture.sh)
+packages/baker/data/
+
+# python venv used by the fetch script
+.venv*/
