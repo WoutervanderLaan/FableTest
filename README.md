@@ -1,10 +1,10 @@
 # RUDERAL — a location-derived block world
 
-**Phase 0: "One True Tile."** A stylized, walkable voxel world derived from real
-geospatial data — this milestone bakes one 512×512 m zone (the Westerkerk /
-Jordaan quarter of Amsterdam) and renders it in the browser: canals, quays,
-bridges, houseboats, street trees, and ~1,500 real building footprints as
-weathered, moss-grown ruins.
+A persistent, shared, walkable voxel world derived from real geospatial data.
+The current build is the **Westerkerk / Jordaan quarter of Amsterdam** — canals,
+quays, bridges, houseboats, street trees, and ~1,500 real building footprints
+as weathered, moss-grown ruins — as a **multiplayer shared canvas**: place and
+break blocks together, watch unsupported structures collapse, throw things.
 
 The aesthetic is **Ruderal Futurism**: post-apocalyptic but optimistic. The
 rigid voxel grid is the damage; soft, grid-ignoring life is the hope.
@@ -13,52 +13,67 @@ rigid voxel grid is the damage; soft, grid-ignoring life is the hope.
 
 ```sh
 pnpm install
-pnpm dev          # serves the client with the committed Amsterdam zonepack
+pnpm dev        # starts BOTH the zone server (:2567) and the client (vite)
 ```
 
-Click to enter. WASD to move, shift to run, space to jump (and to swim up if
-you walk into a canal). Esc releases the pointer.
+Open the client, pick a name, enter. WASD moves, shift runs, space jumps
+(swims up in canals). **Hold LMB** to break (blocks have durability),
+**RMB** places from your inventory, **Q** throws, **1–5** select material.
+Structures need a path to the ground: break the base and the rest falls.
 
-## Re-bake the zone (optional)
+The world is persistent: the server journals every edit and reconstructs
+baseline+edits on restart (`packages/server/data/`).
 
-The baked artifact (`packages/client/public/zones/*.zpk.gz`, ~64 KB) is
-committed, so baking is only needed when changing the pipeline or the zone.
+## Tests
 
 ```sh
-./packages/baker/scripts/fetch-overture.sh   # Overture GeoJSON via uv/pyarrow (once)
-pnpm bake                                    # DEM tiles fetch + rasterize + encode
+pnpm test   # integration suite: real server + real websocket clients
 ```
 
-To bake a different place: change the `ZoneSpec` in `packages/baker/src/index.ts`
-and pass the matching padded bbox to the fetch script.
+Covers: join/movement propagation with server-authoritative simulation and
+input acking, edit propagation + reject rollback, multi-hit durability,
+support-lattice collapse with drops, projectile impact damage, and byte-exact
+world reconstruction across a server restart.
 
-## Architecture (Phase 0 slice)
+## Architecture
 
-- `packages/shared` — engine-agnostic core, shared by baker/client (and the
-  Phase 1 server): zonepack binary format, deterministic zonepack→voxel
-  derivation (ruin erosion, bridges, trees are all seeded hashes — the base
-  world is never persisted, only re-derived), greedy mesher with vertex AO,
-  kinematic AABB voxel collider.
-- `packages/baker` — offline pipeline: Overture Maps GeoParquet (buildings,
-  water, land use, road segments incl. bridge ranges, tree points) +
-  AWS Terrain Tiles elevation → versioned `zonepack`.
-- `packages/client` — Vite + React Three Fiber. R3F for shell/HUD; the chunk
-  layer is imperative three.js fed by a mesher worker pool, nearest-first.
-  One 512 m zone in local tangent-plane coordinates — no globe.
+- `packages/shared` — engine-agnostic core used by baker, client, AND server:
+  zonepack format, deterministic zonepack→voxel derivation (the base world is
+  re-derived, never stored — persistence is a tiny delta overlay), greedy
+  mesher with vertex AO, voxel collider, **the movement step shared by client
+  prediction and server authority**, DDA raycast, support lattice, protocol.
+- `packages/baker` — offline pipeline: Overture Maps GeoParquet + AWS Terrain
+  Tiles → versioned `zonepack` (~64 KB gzipped for 512×512 m of Amsterdam).
+- `packages/server` — authoritative Colyseus zone server. 20 Hz simulation of
+  client inputs through the shared collider, 10 Hz snapshots, validated edits
+  (reach/rate/rules/inventory), Rapier (voxels collider) for server-owned
+  projectiles, support-lattice collapse, append-only edit journal.
+- `packages/client` — Vite + React Three Fiber. Imperative chunk layer fed by
+  a mesher worker pool; client-side prediction with rewind-replay
+  reconciliation; ~120 ms interpolation for remote players; optimistic edits
+  with confirm/timeout/reject rollback; lazy client Rapier for cosmetic
+  collapse debris.
+
+Colyseus schema carries only small state (players, projectiles, drops); voxel
+data never crosses the wire except as compact edit pairs.
+
+### Re-bake the zone
+
+```sh
+./packages/baker/scripts/fetch-overture.sh   # Overture GeoJSON via uv/pyarrow
+pnpm bake
+```
+
+Change the `ZoneSpec` in `packages/baker/src/index.ts` (and the fetch bbox)
+to bake a different place on Earth.
 
 ## Data sources & licensing
 
-- **Overture Maps Foundation** (buildings, transportation, base themes) —
-  includes OpenStreetMap-derived data: **© OpenStreetMap contributors, ODbL**.
-  Attribution is rendered in the client HUD; keep it there.
+- **Overture Maps Foundation** — includes OpenStreetMap-derived data:
+  **© OpenStreetMap contributors, ODbL**. Attribution renders in the HUD.
 - **Terrain Tiles** (Mapzen / AWS Open Data) — elevation; attribution required.
 
-Raw fetched GeoJSON lives in `packages/baker/data/` (gitignored); refetch with
-the script above.
+## Deliberately not here yet
 
-## What is deliberately NOT here
-
-No multiplayer, no server, no block editing, no physics beyond the kinematic
-controller, no economy, no creatures. Those are Phases 1–4 of the project
-plan; Phase 0 exists to prove one thing — that voxelized real-world data
-produces a *recognizable place worth playing in*.
+Economy/trading, creatures, alliances, multiple zones, accounts (identity is
+a display name), mobile. Those are Phases 3–5 of the project plan.
