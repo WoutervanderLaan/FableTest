@@ -1,0 +1,9 @@
+{
+  "zones": [
+    {
+      "id": "ams-westerkerk",
+      "name": "Westerkerk · Amsterdam",
+      "file": "ams-westerkerk.zpk.gz"
+    }
+  ]
+}
