@@ -1,6 +1,9 @@
 /** Bootable server factory — used by index.ts and by integration tests. */
 
-import { Server } from "colyseus";
+// import { Server } from "colyseus";
+import { join } from "node:path";
+import { Server } from "@colyseus/core";
+import { WebSocketTransport } from "@colyseus/ws-transport";
 import { ROOM_NAME } from "@ruderal/shared";
 import { ZoneRoom } from "./rooms/ZoneRoom";
 import { ZoneService } from "./zoneservice";
@@ -22,9 +25,14 @@ export interface App {
 export async function createApp(opts: AppOptions): Promise<App> {
   const service = new ZoneService(opts.zonesDir, opts.dataDir);
 
-  const server = new Server({ greet: false });
+  // const server = new Server({ greet: false });
+  const server = new Server({
+    greet: false,
+    transport: new WebSocketTransport(),
+  });
   // one room per zone, matched by zoneId; the shared service is injected once
   server.define(ROOM_NAME, ZoneRoom, { service }).filterBy(["zoneId"]);
+  // server.define(ROOM_NAME, ZoneRoom, { world, log, physics });
   await server.listen(opts.port);
 
   console.log(

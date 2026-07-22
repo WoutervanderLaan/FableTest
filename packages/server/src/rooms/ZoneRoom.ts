@@ -8,7 +8,7 @@
  * sim) → projectiles → drops → health regen → trade expiry.
  */
 
-import { Client, Room } from "colyseus";
+import { Client, Room } from "@colyseus/core";
 import {
   Block,
   DROP_OF,
