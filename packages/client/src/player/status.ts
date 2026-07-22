@@ -16,6 +16,21 @@ export const netStatus = {
   connected: false,
   pingMs: 0,
   players: 0,
+  zoneId: "",
+  zoneName: "",
+  husks: 0,
+};
+
+export const healthStatus = {
+  hp: 100,
+  maxHp: 100,
+  lastHurtAt: 0,
+  lastDiedAt: 0,
+};
+
+export const combatStatus = {
+  /** husk id currently under the crosshair, or null */
+  targetHuskId: null as string | null,
 };
 
 export const editorStatus = {

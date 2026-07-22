@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { BLOCK_COLOR, Block, localToLonLat, type ZoneSpec } from "@ruderal/shared";
-import { editorStatus, headingLabel, netStatus, playerStatus } from "../player/status";
+import { combatStatus, editorStatus, headingLabel, healthStatus, netStatus, playerStatus } from "../player/status";
 
 const PAPER = "#f4efe3";
 const INK = "#3a352c";
@@ -71,6 +71,9 @@ export function Hud({ spec, loading, progress }: HudProps) {
         <div>
           {netStatus.connected ? `${netStatus.players} online · ${netStatus.pingMs} ms` : "— offline —"}
         </div>
+        {netStatus.husks > 0 && (
+          <div style={{ opacity: 0.8, color: "#7a9e2e" }}>{netStatus.husks} husk{netStatus.husks > 1 ? "s" : ""} near</div>
+        )}
         {status.locked && (
           <div style={{ opacity: 0.75 }}>
             {headingLabel(status.yaw)} · {Math.floor(status.x)}, {Math.floor(status.y)}, {Math.floor(status.z)}
@@ -78,6 +81,26 @@ export function Hud({ spec, loading, progress }: HudProps) {
           </div>
         )}
       </div>
+
+      {/* health bar (bottom-left, above attribution) */}
+      {status.locked && (
+        <div style={{ position: "fixed", bottom: 52, left: 16, width: 200, pointerEvents: "none" }}>
+          <div style={{ fontSize: 10, color: INK, letterSpacing: "0.06em", marginBottom: 3, textTransform: "uppercase" }}>
+            vitality {Math.round(healthStatus.hp)}
+          </div>
+          <div style={{ height: 8, background: "rgba(58,53,44,0.35)", borderRadius: 3, border: `1px solid ${BORDER}` }}>
+            <div
+              style={{
+                height: "100%",
+                width: `${Math.max(0, Math.min(100, (healthStatus.hp / healthStatus.maxHp) * 100))}%`,
+                background: healthStatus.hp > 30 ? "#6fa24b" : "#c0563a",
+                borderRadius: 3,
+                transition: "width 120ms",
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* attribution — ODbL requires it, and we'd owe it anyway */}
       <div style={{ ...panelStyle, bottom: 16, left: 16, fontSize: 10, opacity: 0.85 }}>
@@ -146,7 +169,9 @@ export function Hud({ spec, loading, progress }: HudProps) {
         >
           click to enter — WASD move · shift run · space jump
           <br />
-          hold LMB break · RMB place · Q throw · 1–5 select · esc release
+          hold LMB break · RMB place · Q throw · F strike · 1–5 select
+          <br />
+          T trade · M travel · esc release
         </div>
       )}
 
@@ -158,12 +183,13 @@ export function Hud({ spec, loading, progress }: HudProps) {
               position: "fixed",
               top: "50%",
               left: "50%",
-              width: 4,
-              height: 4,
-              marginLeft: -2,
-              marginTop: -2,
-              borderRadius: "50%",
-              background: AMBER,
+              width: combatStatus.targetHuskId ? 12 : 4,
+              height: combatStatus.targetHuskId ? 12 : 4,
+              marginLeft: combatStatus.targetHuskId ? -6 : -2,
+              marginTop: combatStatus.targetHuskId ? -6 : -2,
+              borderRadius: combatStatus.targetHuskId ? 2 : "50%",
+              background: combatStatus.targetHuskId ? "transparent" : AMBER,
+              border: combatStatus.targetHuskId ? `2px solid #c0563a` : "none",
               boxShadow: "0 0 3px rgba(58,53,44,0.6)",
               pointerEvents: "none",
             }}

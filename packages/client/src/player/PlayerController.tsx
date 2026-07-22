@@ -14,6 +14,7 @@ import * as THREE from "three";
 import {
   Block,
   HARDNESS,
+  MELEE_RANGE,
   PLACEABLE,
   PLAYER,
   REACH,
@@ -29,7 +30,7 @@ import {
 } from "@ruderal/shared";
 import type { Net } from "../net/connection";
 import type { WorldManager } from "../world/WorldManager";
-import { editorStatus, netStatus, playerStatus } from "./status";
+import { combatStatus, editorStatus, healthStatus, netStatus, playerStatus } from "./status";
 
 const HIT_INTERVAL_MS = 220;
 const EDIT_CONFIRM_TIMEOUT_MS = 1200;
@@ -109,11 +110,20 @@ export function PlayerController({ world, net, spawn }: Props) {
       net.on("damage", (m) => {
         serverDamage.current.set(m.p, { d: m.d, need: m.need });
       }),
+      net.on("hurt", (m) => {
+        healthStatus.hp = m.hp;
+        healthStatus.lastHurtAt = performance.now();
+      }),
+      net.on("died", () => {
+        healthStatus.lastDiedAt = performance.now();
+        healthStatus.hp = healthStatus.maxHp;
+      }),
       net.on("leave", () => {
         netStatus.connected = false;
       }),
     ];
     netStatus.connected = true;
+    netStatus.zoneId = net.init.zoneId;
     return () => offs.forEach((off) => off());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [net, world]);
@@ -142,6 +152,7 @@ export function PlayerController({ world, net, spawn }: Props) {
           if (slot >= 0 && slot < bar.length) editorStatus.selected = bar[slot];
         }
         if (e.code === "KeyQ") throwFromCamera();
+        if (e.code === "KeyF") net.attack(combatStatus.targetHuskId ?? "");
       }
     };
     const onKeyUp = (e: KeyboardEvent) => keys.current.delete(e.code);
@@ -192,6 +203,14 @@ export function PlayerController({ world, net, spawn }: Props) {
           invObj[k] = v;
         });
         return { eye: e, dir: { x: d.x, y: d.y, z: d.z }, pitch: pitch.current, hit, inv: invObj, selected: editorStatus.selected };
+      },
+      husks: () => {
+        const st = net.room.state as {
+          husks?: { forEach(cb: (h: { x: number; y: number; z: number }) => void): void };
+        };
+        const out: Array<{ x: number; y: number; z: number }> = [];
+        st.husks?.forEach((h) => out.push({ x: h.x, y: h.y, z: h.z }));
+        return out;
       },
     };
     return () => {
@@ -329,8 +348,9 @@ export function PlayerController({ world, net, spawn }: Props) {
   useEffect(() => {
     const t = setInterval(() => {
       netStatus.pingMs = net.latencyMs;
-      const state = net.room.state as { players?: { size?: number } };
+      const state = net.room.state as { players?: { size?: number }; husks?: { size?: number } };
       netStatus.players = state.players?.size ?? 0;
+      netStatus.husks = state.husks?.size ?? 0;
       const inv = ownInv();
       if (inv) {
         const snapshot: Record<string, number> = {};
@@ -339,10 +359,37 @@ export function PlayerController({ world, net, spawn }: Props) {
         });
         editorStatus.inv = snapshot;
       }
+      const me = (net.room.state as { players?: { get(id: string): { hp?: number } | undefined } }).players?.get(net.id);
+      if (me?.hp !== undefined) healthStatus.hp = me.hp;
     }, 200);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [net]);
+
+  /** Nearest husk to the aim ray within melee range — sets the combat target
+   *  and returns it so the frame loop can draw a reticle. */
+  const updateHuskTarget = () => {
+    const e = eye();
+    const d = cameraDir();
+    const state = net.room.state as {
+      husks?: { forEach(cb: (h: { x: number; y: number; z: number }, id: string) => void): void };
+    };
+    let bestId: string | null = null;
+    let bestScore = 0.9; // require reasonable aim alignment
+    state.husks?.forEach((h, id) => {
+      const vx = h.x - e.x;
+      const vy = h.y + 0.9 - e.y;
+      const vz2 = h.z - e.z;
+      const dist = Math.hypot(vx, vy, vz2);
+      if (dist > MELEE_RANGE + 1.2 || dist < 0.001) return;
+      const align = (vx * d.x + vy * d.y + vz2 * d.z) / dist;
+      if (align > bestScore) {
+        bestScore = align;
+        bestId = id;
+      }
+    });
+    combatStatus.targetHuskId = bestId;
+  };
 
   useFrame((_, rawDt) => {
     const now = performance.now();
@@ -423,6 +470,9 @@ export function PlayerController({ world, net, spawn }: Props) {
 
     // ---- editing ----
     if (locked.current && mouseDown.current.left) tryBreak(now);
+
+    // ---- combat targeting ----
+    updateHuskTarget();
 
     // highlight targeted voxel
     {
