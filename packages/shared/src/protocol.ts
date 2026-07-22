@@ -30,17 +30,25 @@ export const SUPPORT_BUDGET = 900; // max blocks explored per support check
 export const MSG = {
   // client → server
   input: "in", // InputMsg[]
-  edit: "ed", // { p: packedXYZ, b: blockId (0 = break) }
+  edit: "ed", // { p: packedXYZ, b: blockId } (placement)
   hit: "hi", // { p: packedXYZ }
   throw: "th", // { dx, dy, dz } unit direction
   ping: "pi", // number (client time)
+  attack: "at", // { id } — melee a creature
+  tradeOffer: "to", // { give: {b,n}, want: {b,n} } — offered to nearest player
+  tradeAccept: "ta", // { id }
+  tradeDecline: "td", // { id }
   // server → client
-  init: "IN", // { id, spawn, edits: number[] (pairs p,b), inv: Record<b, n> }
+  init: "IN", // { id, zoneId, spawn, edits: number[] (pairs p,b) }
   edits: "ED", // number[] pairs (p, b) — applied authoritative edits
   reject: "RJ", // number[] pairs (p, actualBlock) — rollback info for sender
   damage: "DM", // { p, d, need } — break progress on a block (sender only)
   collapse: "CO", // number[] pairs (p, prevBlock) — cluster that fell
   pong: "PO", // number (echoed client time)
+  hurt: "HU", // { hp, by } — you took damage
+  died: "DI", // {} — you died and respawned
+  tradeIncoming: "TI", // { id, from, fromName, give, want }
+  tradeResult: "TR", // { id, ok, reason? } — to both parties
 } as const;
 
 export interface InputMsg {
@@ -78,7 +86,49 @@ export const HARDNESS: Readonly<Record<number, number>> = {
   [Block.Asphalt]: 4,
   [Block.Pavement]: 4,
   [Block.Concrete]: 4,
+  [Block.Salvage]: 2,
+  [Block.Biomass]: 1,
+  [Block.Clay]: 2,
 };
+
+/** Resource-node yields: [block, min, max] rolls per harvest (Phase 3).
+ *  The zone's real land-use decides which nodes exist where — dense urban
+ *  ruins yield salvage, parks yield biomass, waterlines yield clay. */
+export const NODE_YIELDS: Readonly<Record<number, ReadonlyArray<[number, number, number]>>> = {
+  [Block.Salvage]: [
+    [Block.Brick, 1, 3],
+    [Block.Concrete, 1, 2],
+    [Block.Wood, 0, 1],
+  ],
+  [Block.Biomass]: [
+    [Block.Moss, 1, 2],
+    [Block.Wood, 0, 1],
+  ],
+  [Block.Clay]: [[Block.Brick, 1, 2]],
+};
+
+/** Node regeneration time (server may override via env for tests). */
+export const NODE_RESPAWN_MS = 120_000;
+
+// ---- combat (Phase 4) ----
+export const PLAYER_MAX_HP = 100;
+export const PLAYER_REGEN_PER_S = 2; // after 8s without damage
+export const PLAYER_REGEN_DELAY_MS = 8000;
+export const MELEE_DAMAGE = 25;
+export const MELEE_RANGE = 2.6;
+export const HUSK_HP = 60;
+export const HUSK_DAMAGE = 8;
+export const HUSK_ATTACK_COOLDOWN_MS = 1200;
+export const HUSK_MELEE_RANGE = 1.7;
+export const HUSK_AGGRO_RANGE = 14;
+export const HUSK_MOVE_SCALE = 0.55; // fraction of walk speed
+export const HUSK_BLOCK_HIT_MS = 1600; // siege: damage a blocking placed block
+export const HUSK_THINK_MS = 400;
+export const PROJECTILE_CREATURE_DAMAGE = 40;
+
+// ---- trade (Phase 3) ----
+export const TRADE_RANGE = 6;
+export const TRADE_TTL_MS = 30_000;
 
 /** What breaking a block yields (Phase 2 drops). Terrain yields nothing to
  *  keep digging from being a free block mine at MVP balance. */

@@ -82,7 +82,26 @@ export function voxelize(pack: Zonepack): VoxelZone {
         if (lc === Landcover.Road) set(x, waterLevel + 1, z, Block.Asphalt);
         else if (lc === Landcover.Path) set(x, waterLevel + 1, z, Block.Pavement);
       } else {
-        set(x, th, z, LANDCOVER_TOP[pack.landcover[i]] ?? Block.Grass);
+        const top = LANDCOVER_TOP[pack.landcover[i]] ?? Block.Grass;
+        set(x, th, z, top);
+        // clay deposits along the water line (Phase 3 resource node)
+        const nearWater =
+          (x > 0 && pack.water[i - 1] === 1) ||
+          (x < sizeX - 1 && pack.water[i + 1] === 1) ||
+          (z > 0 && pack.water[i - sizeX] === 1) ||
+          (z < sizeZ - 1 && pack.water[i + sizeX] === 1);
+        if (nearWater && pack.buildingHeight[i] === 0 && hash01(seed, x, z, 62) < 0.18) {
+          set(x, th, z, Block.Clay);
+        }
+        // biomass bushes on open grass (parks read resource-rich)
+        if (
+          top === Block.Grass &&
+          pack.buildingHeight[i] === 0 &&
+          (pack.landcover[i] === Landcover.Grass || pack.landcover[i] === Landcover.Trees || pack.landcover[i] === Landcover.None) &&
+          hash01(seed, x, z, 61) < 0.02
+        ) {
+          set(x, th + 1, z, Block.Biomass);
+        }
       }
 
       // -- building column --
@@ -147,8 +166,11 @@ export function voxelize(pack: Zonepack): VoxelZone {
             set(x, y, z, b);
           }
         } else if (!intact) {
-          // roofless interior: rubble scatter on the floor
-          if (hash01(seed, x, z, 11) < 0.3) set(x, base + 1, z, Block.Rubble);
+          // roofless interior: rubble scatter, with occasional salvage caches —
+          // urban ruins are where building material comes from (plan §Phase 3)
+          const r = hash01(seed, x, z, 11);
+          if (r < 0.06) set(x, base + 1, z, Block.Salvage);
+          else if (r < 0.3) set(x, base + 1, z, Block.Rubble);
         }
         if (intact) {
           set(x, base + bh, z, houseboat ? Block.Wood : Block.Roof);

@@ -22,10 +22,14 @@ export const Block = {
   Moss: 12,
   Concrete: 13,
   Leaves: 14,
+  /** resource nodes (Phase 3) — harvestable, regenerating, never placeable */
+  Salvage: 15,
+  Biomass: 16,
+  Clay: 17,
 } as const;
 
 export type BlockId = (typeof Block)[keyof typeof Block];
-export const BLOCK_COUNT = 15;
+export const BLOCK_COUNT = 18;
 
 function rgb(hex: number): [number, number, number] {
   return [((hex >> 16) & 0xff) / 255, ((hex >> 8) & 0xff) / 255, (hex & 0xff) / 255];
@@ -48,6 +52,9 @@ export const BLOCK_COLOR: ReadonlyArray<[number, number, number]> = [
   rgb(0x7da65b), // Moss — wall growth, slightly brighter than grass
   rgb(0xb8b2a7), // Concrete
   rgb(0x8fa34f), // Leaves — lichen chartreuse leaning green
+  rgb(0x8a6a45), // Salvage — warm scrap-brown, human-made past
+  rgb(0x4fae6e), // Biomass — vivid regrowth green
+  rgb(0xa4764f), // Clay — pale terracotta at the water line
 ];
 
 /** Grass/soil columns get a grass-colored top but soil-colored sides. */

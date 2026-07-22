@@ -14,6 +14,8 @@ export interface ZoneSpec {
   centerLat: number;
   /** Horizontal extent in meters (square). One block = one meter. */
   sizeMeters: number;
+  /** Short flavor line for the zone-select menu. */
+  blurb?: string;
 }
 
 /** Meters per degree of latitude/longitude at a given latitude (WGS84 series). */
