@@ -3,7 +3,22 @@
     {
       "id": "ams-westerkerk",
       "name": "Westerkerk · Amsterdam",
-      "file": "ams-westerkerk.zpk.gz"
+      "file": "ams-westerkerk.zpk.gz",
+      "blurb": "Dense canal-house ruins. Rich in salvage, thin on green.",
+      "centerLon": 4.88352,
+      "centerLat": 52.37454,
+      "waterPct": 15,
+      "buildingPct": 45.3
+    },
+    {
+      "id": "ams-vondelpark",
+      "name": "Vondelpark · Amsterdam",
+      "file": "ams-vondelpark.zpk.gz",
+      "blurb": "The old park, overgrown. Biomass everywhere, little to scavenge.",
+      "centerLon": 4.8685,
+      "centerLat": 52.3581,
+      "waterPct": 8.6,
+      "buildingPct": 11.4
     }
   ]
 }
