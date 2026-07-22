@@ -8,6 +8,8 @@
 import { gunzipSync } from "node:zlib";
 import { readFileSync } from "node:fs";
 import {
+  Block,
+  NODE_YIELDS,
   decodeZonepack,
   packXYZ,
   setVoxelAt,
@@ -64,5 +66,37 @@ export class ServerWorld {
       out.push(p, b);
     }
     return out;
+  }
+
+  /** The block a cell holds in the baseline (pre-edit) world. */
+  baselineBlock(x: number, y: number, z: number): number {
+    if (y < 0 || y >= this.vz.sizeY || x < 0 || x >= this.vz.sizeX || z < 0 || z >= this.vz.sizeZ) return Block.Air;
+    return this.baseline[(y * this.vz.sizeZ + z) * this.vz.sizeX + x];
+  }
+
+  /** True iff the baseline cell is a harvestable resource node. */
+  isNodeCell(x: number, y: number, z: number): boolean {
+    return NODE_YIELDS[this.baselineBlock(x, y, z)] !== undefined;
+  }
+
+  /**
+   * Regenerate harvested nodes: any overlay entry that turned a baseline node
+   * block into air is restored to the node. Called when a zone WAKES from
+   * hibernation, so a zone nobody is visiting quietly replenishes. Returns the
+   * restored cells so the caller can (re)build physics before serving clients.
+   */
+  regenerateHarvestedNodes(): Array<[number, number, number]> {
+    const restored: Array<[number, number, number]> = [];
+    for (const [p, b] of [...this.edits]) {
+      if (b !== Block.Air) continue;
+      const x = unpackX(p);
+      const y = unpackY(p);
+      const z = unpackZ(p);
+      if (this.isNodeCell(x, y, z)) {
+        this.applyEdit(x, y, z, this.baselineBlock(x, y, z)); // == baseline → overlay entry removed
+        restored.push([x, y, z]);
+      }
+    }
+    return restored;
   }
 }

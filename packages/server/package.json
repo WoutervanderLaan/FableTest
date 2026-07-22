@@ -7,7 +7,7 @@
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx test/integration.ts"
+    "test": "RUDERAL_TEST=1 HUSK_CAP=0 NODE_RESPAWN_MS=800 tsx test/integration.ts"
   },
   "dependencies": {
     "@colyseus/core": "~0.16.24",

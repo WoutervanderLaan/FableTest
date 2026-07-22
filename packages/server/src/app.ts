@@ -1,48 +1,43 @@
 /** Bootable server factory — used by index.ts and by integration tests. */
 
-import { join } from "node:path";
 import { Server } from "colyseus";
 import { ROOM_NAME } from "@ruderal/shared";
-import { EditLog } from "./editlog";
-import { ZonePhysics } from "./physics";
 import { ZoneRoom } from "./rooms/ZoneRoom";
-import { ServerWorld } from "./world";
+import { ZoneService } from "./zoneservice";
 
 export interface AppOptions {
-  zonepackPath: string;
+  /** Directory holding zones.json + *.zpk.gz (client/public/zones). */
+  zonesDir: string;
+  /** Writable dir for edit journals + players.json. */
   dataDir: string;
   port: number;
 }
 
 export interface App {
   server: Server;
-  world: ServerWorld;
-  log: EditLog;
+  service: ZoneService;
   shutdown: () => Promise<void>;
 }
 
 export async function createApp(opts: AppOptions): Promise<App> {
-  const world = new ServerWorld(opts.zonepackPath);
-  const log = new EditLog(join(opts.dataDir, `${world.pack.header.id}.edits.log`));
-  const persisted = world.loadEdits(log.load());
-  const physics = await ZonePhysics.create(world.vz);
+  const service = new ZoneService(opts.zonesDir, opts.dataDir);
 
   const server = new Server({ greet: false });
-  server.define(ROOM_NAME, ZoneRoom, { world, log, physics });
+  // one room per zone, matched by zoneId; the shared service is injected once
+  server.define(ROOM_NAME, ZoneRoom, { service }).filterBy(["zoneId"]);
   await server.listen(opts.port);
 
   console.log(
-    `[ruderal] zone '${world.pack.header.id}' on :${opts.port} — ` +
-      `${world.vz.sizeX}×${world.vz.sizeY}×${world.vz.sizeZ}, ${persisted} persisted edits`,
+    `[ruderal] on :${opts.port} — ${service.manifest.length} zone(s) available: ` +
+      service.manifest.map((z) => z.id).join(", "),
   );
 
   return {
     server,
-    world,
-    log,
+    service,
     shutdown: async () => {
-      log.compact(world.editPairs());
       await server.gracefullyShutdown(false);
+      service.dispose();
     },
   };
 }

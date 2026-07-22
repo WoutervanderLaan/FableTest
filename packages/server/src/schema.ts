@@ -22,6 +22,7 @@ export class PlayerS extends Schema {
   declare lastSeq: number;
   declare grounded: boolean;
   declare swimming: boolean;
+  declare hp: number;
   declare inv: MapSchema<number>;
 
   constructor() {
@@ -37,6 +38,7 @@ export class PlayerS extends Schema {
     this.lastSeq = 0;
     this.grounded = false;
     this.swimming = false;
+    this.hp = 100;
     this.inv = new MapSchema<number>();
   }
 }
@@ -52,7 +54,35 @@ defineTypes(PlayerS, {
   lastSeq: "uint32",
   grounded: "boolean",
   swimming: "boolean",
+  hp: "uint16",
   inv: { map: "uint16" },
+});
+
+export class HuskS extends Schema {
+  declare x: number;
+  declare y: number;
+  declare z: number;
+  declare yaw: number;
+  declare hp: number;
+  declare state: number; // 0 wander, 1 chase, 2 attack, 3 siege
+
+  constructor() {
+    super();
+    this.x = 0;
+    this.y = 0;
+    this.z = 0;
+    this.yaw = 0;
+    this.hp = 60;
+    this.state = 0;
+  }
+}
+defineTypes(HuskS, {
+  x: "float32",
+  y: "float32",
+  z: "float32",
+  yaw: "float32",
+  hp: "uint16",
+  state: "uint8",
 });
 
 export class ProjectileS extends Schema {
@@ -88,19 +118,25 @@ export class DropS extends Schema {
 defineTypes(DropS, { x: "float32", y: "float32", z: "float32", b: "uint8" });
 
 export class ZoneState extends Schema {
+  declare zoneId: string;
   declare players: MapSchema<PlayerS>;
   declare projectiles: MapSchema<ProjectileS>;
   declare drops: MapSchema<DropS>;
+  declare husks: MapSchema<HuskS>;
 
   constructor() {
     super();
+    this.zoneId = "";
     this.players = new MapSchema<PlayerS>();
     this.projectiles = new MapSchema<ProjectileS>();
     this.drops = new MapSchema<DropS>();
+    this.husks = new MapSchema<HuskS>();
   }
 }
 defineTypes(ZoneState, {
+  zoneId: "string",
   players: { map: PlayerS },
   projectiles: { map: ProjectileS },
   drops: { map: DropS },
+  husks: { map: HuskS },
 });
