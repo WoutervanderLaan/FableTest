@@ -37,7 +37,9 @@ export function App() {
           letterSpacing: "0.04em",
         }}
       >
-        <div style={{ fontSize: 22, fontWeight: 700, textTransform: "uppercase" }}>
+        <div
+          style={{ fontSize: 22, fontWeight: 700, textTransform: "uppercase" }}
+        >
           Mini-Ruderal
         </div>
         <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>
@@ -55,17 +57,18 @@ export function App() {
             lineHeight: 1.6,
           }}
         >
-          If you can read this, the scaffold works: <b>Vite + React 19 + TypeScript</b>{" "}
-          are booting correctly. ✅
+          If you can read this, the scaffold works:{" "}
+          <b>Vite + React 19 + TypeScript</b> are booting correctly. ✅
           <br />
           <br />
-          Open <code>../lessons/00-orientation.md</code> to get your bearings, then start{" "}
-          <code>01-threejs-from-scratch.md</code>.
+          Open <code>../lessons/00-orientation.md</code> to get your bearings,
+          then start <code>01-threejs-from-scratch.md</code>.
         </div>
 
         <div style={{ fontSize: 11, opacity: 0.65, marginTop: 18 }}>
-          Edit <code>src/client/App.tsx</code> and this page hot-reloads. That feedback loop
-          is your whole life for the next 21 modules — get comfortable with it.
+          Edit <code>src/client/App.tsx</code> and this page hot-reloads. That
+          feedback loop is your whole life for the next 21 modules — get
+          comfortable with it.
         </div>
       </div>
     </div>
