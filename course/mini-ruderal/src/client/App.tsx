@@ -1,76 +1,52 @@
-/**
- * Part 0 baseline — this file is the "hello world" your course starts from.
- *
- * Right now it's plain DOM: no Three.js, no Canvas. That's on purpose — Module
- * 01 opens the hood on raw Three.js, and Module 02 brings in React Three Fiber.
- * You'll rewrite this file many times. When in doubt about where a module
- * should end up, copy the matching folder from `../../checkpoints/` over `src/`.
- */
+import { Canvas, useFrame } from "@react-three/fiber";
+import { useRef, useState } from "react";
+import { Mesh, Vector3 } from "three";
 
-const PAPER = "#f4efe3";
-const INK = "#3a352c";
-const BORDER = "#b8b2a7";
-const AMBER = "#e8a33d";
+const Box = ({ position }: { position: Vector3 }) => {
+  const boxRef = useRef<Mesh>(null);
+  const [active, setActive] = useState(false);
+  const [clicked, setClicked] = useState(false);
 
-export function App() {
+  useFrame((_state, delta) => {
+    if (!boxRef.current) return;
+
+    boxRef.current.rotation.x += delta * 0.5;
+    boxRef.current.rotation.y += delta * 0.6;
+  });
+
   return (
-    <div
-      style={{
-        height: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#cfc8b8",
-        color: INK,
+    <mesh
+      ref={boxRef}
+      position={position}
+      onPointerOver={() => setActive(true)}
+      onPointerOut={() => setActive(false)}
+      onClick={() => setClicked((prev) => !prev)}
+    >
+      <boxGeometry args={[1, 1, 1]} />
+      <meshStandardMaterial
+        color={clicked ? "#fff" : active ? "#e8a33d" : "#000"}
+      />
+    </mesh>
+  );
+};
+
+export const App = () => {
+  return (
+    <Canvas
+      camera={{
+        fov: 60,
+        near: 0.1,
+        far: 100,
+        position: [2.5, 2.5, 3.5],
       }}
     >
-      <div
-        style={{
-          width: 460,
-          maxWidth: "90vw",
-          background: PAPER,
-          border: `1px solid ${BORDER}`,
-          borderTop: `4px solid ${AMBER}`,
-          borderRadius: 2,
-          boxShadow: "0 2px 10px rgba(58,53,44,0.3)",
-          padding: 28,
-          letterSpacing: "0.04em",
-        }}
-      >
-        <div
-          style={{ fontSize: 22, fontWeight: 700, textTransform: "uppercase" }}
-        >
-          Mini-Ruderal
-        </div>
-        <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>
-          your workspace for the R3F · Three.js · shaders · multiplayer course
-        </div>
-
-        <div
-          style={{
-            marginTop: 20,
-            padding: "12px 14px",
-            background: "#fbf8ef",
-            border: `1px solid ${BORDER}`,
-            borderRadius: 2,
-            fontSize: 13,
-            lineHeight: 1.6,
-          }}
-        >
-          If you can read this, the scaffold works:{" "}
-          <b>Vite + React 19 + TypeScript</b> are booting correctly. ✅
-          <br />
-          <br />
-          Open <code>../lessons/00-orientation.md</code> to get your bearings,
-          then start <code>01-threejs-from-scratch.md</code>.
-        </div>
-
-        <div style={{ fontSize: 11, opacity: 0.65, marginTop: 18 }}>
-          Edit <code>src/client/App.tsx</code> and this page hot-reloads. That
-          feedback loop is your whole life for the next 21 modules — get
-          comfortable with it.
-        </div>
-      </div>
-    </div>
+      <color attach="background" args={["#9bd4b7"]} />
+      <hemisphereLight args={["#cdd4cc", "#6b5f4e", 1.0]} />
+      <directionalLight position={[3, 5, 2]} intensity={2.5} />
+      <group position={new Vector3(0, 0, -1)}>
+        <Box position={new Vector3(1, 0, 1)} />
+        <Box position={new Vector3(-1, 0, 1)} />
+      </group>
+    </Canvas>
   );
-}
+};
