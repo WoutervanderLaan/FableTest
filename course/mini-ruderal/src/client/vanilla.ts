@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { makeCube, makePatchwork, makeSquare } from "./MeshBuilder";
 
 export const startScene = (container: HTMLElement | null) => {
   if (!container) {
@@ -16,13 +17,33 @@ export const startScene = (container: HTMLElement | null) => {
     new THREE.MeshStandardMaterial({ color: "#e8a33d" }),
   );
 
+  const customBoxGeometry = makeCube();
+  const customSquareGeometry = makePatchwork();
+
   const box = new THREE.Mesh(
-    new THREE.BoxGeometry(2, 1, 1),
-    new THREE.MeshStandardMaterial({ color: "#af0d0d" }),
+    customBoxGeometry,
+    new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      color: "#ffffff",
+      side: THREE.DoubleSide,
+    }),
   );
   box.position.x = -2;
 
+  const square = new THREE.Mesh(
+    customSquareGeometry,
+    new THREE.MeshStandardMaterial({
+      side: THREE.DoubleSide,
+      vertexColors: true,
+    }),
+  );
+
+  square.position.y = -1;
+  square.position.x = -4;
+  square.position.z = -4;
+
   scene.add(cube);
+  scene.add(square);
   scene.add(box);
 
   const camera = new THREE.PerspectiveCamera(
@@ -46,7 +67,7 @@ export const startScene = (container: HTMLElement | null) => {
     cube.rotation.x = time * 0.5;
     cube.rotation.y = time * 0.6;
 
-    box.rotation.x = time;
+    box.rotation.y = time;
 
     renderer.render(scene, camera);
   };

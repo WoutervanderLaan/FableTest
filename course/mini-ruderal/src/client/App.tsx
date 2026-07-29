@@ -1,8 +1,10 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Mesh, Vector3 } from "three";
+import { makePatchwork } from "./MeshBuilder";
+import { SkyAndLight } from "./scene/SkyAndLight";
 
-const Box = ({ position }: { position: Vector3 }) => {
+const Box = ({ position }: { position: [number, number, number] }) => {
   const boxRef = useRef<Mesh>(null);
   const [active, setActive] = useState(false);
   const [clicked, setClicked] = useState(false);
@@ -17,15 +19,27 @@ const Box = ({ position }: { position: Vector3 }) => {
   return (
     <mesh
       ref={boxRef}
+      castShadow
+      receiveShadow
       position={position}
       onPointerOver={() => setActive(true)}
       onPointerOut={() => setActive(false)}
       onClick={() => setClicked((prev) => !prev)}
     >
-      <boxGeometry args={[1, 1, 1]} />
+      <boxGeometry args={[4, 4, 4]} />
       <meshStandardMaterial
-        color={clicked ? "#fff" : active ? "#e8a33d" : "#000"}
+        color={clicked ? "#fff" : active ? "#e8a33d" : "#09eef6"}
       />
+    </mesh>
+  );
+};
+
+const Ground = () => {
+  const geometry = useMemo(() => makePatchwork(1000), []);
+
+  return (
+    <mesh geometry={geometry} receiveShadow>
+      <meshStandardMaterial vertexColors />
     </mesh>
   );
 };
@@ -33,19 +47,17 @@ const Box = ({ position }: { position: Vector3 }) => {
 export const App = () => {
   return (
     <Canvas
-      camera={{
-        fov: 60,
-        near: 0.1,
-        far: 100,
-        position: [2.5, 2.5, 3.5],
-      }}
+      shadows
+      camera={{ position: [8, 12, 30], fov: 55 }}
+      onCreated={({ camera }) => camera.lookAt(8, 1, 8)}
     >
-      <color attach="background" args={["#9bd4b7"]} />
-      <hemisphereLight args={["#cdd4cc", "#6b5f4e", 1.0]} />
-      <directionalLight position={[3, 5, 2]} intensity={2.5} />
+      <SkyAndLight center={8} />
+
+      <Ground />
+
       <group position={new Vector3(0, 0, -1)}>
-        <Box position={new Vector3(1, 0, 1)} />
-        <Box position={new Vector3(-1, 0, 1)} />
+        <Box position={[10, 5, 16]} />
+        <Box position={[0, 5, 16]} />
       </group>
     </Canvas>
   );
