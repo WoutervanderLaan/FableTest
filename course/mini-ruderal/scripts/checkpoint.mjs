@@ -3,7 +3,7 @@
  * Load a course checkpoint into this app.
  *
  *   pnpm checkpoint            # list available checkpoints
- *   pnpm checkpoint 05         # back up ./src, then copy checkpoints/05-*/src over it
+ *   pnpm checkpoint 05         # back up ./src, then copy checkpoints/05-<slug>/src over it
  *   pnpm checkpoint 08D        # deep-dive checkpoints work too
  *
  * Your current ./src is never lost — it's moved to ./src.bak-<timestamp>.

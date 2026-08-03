@@ -92,19 +92,34 @@ them on your first pass and come back to push one topic toward full-Ruderal fide
 - **03 · Geometry by hand** — `BufferGeometry`: positions, normals, colors, indices. The foundation of everything voxel.
 - **04 · Light, shadow, fog & sky** — a directional sun with shadows, hemisphere fill, fog, a sky dome.
 
+### Part 1B — The model-based path *(optional branch)*
+Everything so far generates its own geometry. These three modules cover the other way to fill a
+scene: loading art somebody authored. Skip them if you only care about the voxel world; do them
+(and then jump to Part 3) if your goal is a hand-composed 3D scene rather than a generated one.
+- **04B · Loading glTF models** — `GLTFLoader`, Suspense, cloning, and the ownership rules for disposal.
+- **04C · Textures, UVs & PBR maps** — UV space, wrapping & repeat, the sRGB-vs-linear rule, normal/roughness maps, atlases.
+- **04D · Animation & scene composition** — `AnimationMixer` and glTF clips, frame-rate-independent damping, camera rigs and layout.
+
 ### Part 2 — The voxel world
 - **05 · Voxel data model** — a `Uint8Array` world, a block palette, coordinate packing.
 - **06 · A naive mesher** — turn voxels into a mesh, one face at a time. Now you can *see* the world.
 - **07 · First-person controller** — pointer lock, WASD, gravity, collision. Walk around.
+- **07B · Physics with Rapier** — rigid bodies and a voxel collider, and why the *player* stays hand-rolled.
 - **08 · Raycast & edit** — look at a block, break it, place one. Minecraft-in-miniature.
 - **08D · Greedy meshing + AO + web worker** *(deep-dive)* — the real, fast mesher off the main thread.
+- **08E · The math of voxels & bytes** *(deep-dive)* — derives every formula in Part 2: the index
+  arithmetic, bit-packing and hex, DDA, AO, greedy merging, and binary file formats.
 
 ### Part 3 — Shaders
 - **09 · GLSL fundamentals** — the vertex→fragment pipeline, uniforms, varyings, a raw `ShaderMaterial`.
+- **09B · Shader math I — the toolkit** — `smoothstep`, `mix`, distance, polar, waves, `fract`, curves, and lighting from dot products.
+- **09C · Shader math II — noise, SDFs & warping** — hashing → value noise → fbm → domain warping; signed distance fields, `smin`, dithering.
 - **10 · The sky-dome shader** — a real gradient sky with a warm sun glow.
 - **11 · Patching materials (`onBeforeCompile`)** — per-voxel color jitter + instanced, wind-swayed grass.
 - **12 · Postprocessing** — `EffectComposer` with Bloom, Vignette, Noise.
 - **12D · Shader techniques** *(deep-dive)* — translucent water, a fresnel rim, noise fields.
+- **12E · WebGPU & TSL** — the same scene on `WebGPURenderer`; module 10's sky rewritten as a node graph, with the honest trade-offs.
+- **12F · Performance & profiling** — draw calls, instancing, culling, disposal, and reading `renderer.info`.
 
 ### Part 4 — Multiplayer
 - **13 · Netcode mental model + Colyseus** — why servers are authoritative; stand up a room.
@@ -132,5 +147,9 @@ We deliberately **don't use `@react-three/drei`** (the popular R3F helper librar
 the real Ruderal doesn't either — and because building things like the camera controller
 and geometry by hand is exactly how you actually learn Three.js. Once you've done it the
 hard way, reaching for drei later is an informed choice, not a crutch.
+
+Module **04B** is where that policy gets tested: it builds a suspense-aware glTF loader by hand
+and then shows you drei's one-line equivalent in a callout, so you can see exactly what the
+helper is doing for you. Same principle — do it the hard way once, then choose.
 
 Ready? Open [`lessons/00-orientation.md`](./lessons/00-orientation.md).

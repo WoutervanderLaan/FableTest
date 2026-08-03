@@ -121,4 +121,7 @@ pnpm dev
 Files: `src/client/scene/Water.tsx`, `src/client/App.tsx`.
 
 **Next:** [`13-netcode-and-colyseus.md`](./13-netcode-and-colyseus.md) — Part 4. The world
-goes multiplayer.
+goes multiplayer. Or finish Part 3 first with
+[`12E-webgpu-and-tsl.md`](./12E-webgpu-and-tsl.md) (the same scene on a WebGPU renderer, shaders
+written as TypeScript) and [`12F-performance.md`](./12F-performance.md) (draw calls, instancing,
+and how to profile instead of guess).

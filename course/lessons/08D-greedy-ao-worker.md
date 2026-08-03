@@ -156,4 +156,6 @@ Files: `src/shared/chunkMesher.ts`, `src/worker/mesher.worker.ts`,
 `src/client/WorldManager.ts`, `src/client/PlayerController.tsx`, `src/client/App.tsx`.
 
 **Next:** [`09-glsl-fundamentals.md`](./09-glsl-fundamentals.md) — Part 3 begins. Time to
-write shaders.
+write shaders. Or, if you'd rather nail down the maths first,
+[`08E-voxel-math-and-bytes.md`](./08E-voxel-math-and-bytes.md) *(deep-dive)* derives every
+formula in Part 2 — the index arithmetic, the bit-packing, DDA, AO and greedy merging.

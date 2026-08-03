@@ -113,4 +113,7 @@ pnpm dev
 
 Files: `src/client/App.tsx`.
 
-**Next:** [`10-sky-shader.md`](./10-sky-shader.md) — put a real shader sky over the world.
+**Next:** [`09B-shader-math-toolkit.md`](./09B-shader-math-toolkit.md) — the maths the rest of
+Part 3 is written in (`smoothstep`, `mix`, dot products, noise). Strongly recommended before
+module 10, but you can also go straight to
+[`10-sky-shader.md`](./10-sky-shader.md) and put a real shader sky over the world.

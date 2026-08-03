@@ -204,4 +204,6 @@ You can now stand up a lit, shadowed, atmospheric Three.js scene in R3F and buil
 geometry you want from raw buffers. That's the entire foundation. **Part 2** puts it to
 work: a real voxel world you can walk around inside.
 
-**Next:** [`05-voxel-data-model.md`](./05-voxel-data-model.md).
+**Next:** [`05-voxel-data-model.md`](./05-voxel-data-model.md) — or branch into
+[`04B-gltf-and-assets.md`](./04B-gltf-and-assets.md) *(optional)* to fill a scene with loaded
+models, textures and animation instead of generated geometry.

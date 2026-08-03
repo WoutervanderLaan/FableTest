@@ -142,4 +142,6 @@ pnpm dev
 Files: `src/shared/collide.ts`, `src/shared/movement.ts`,
 `src/client/PlayerController.tsx`, `src/client/ui/Hud.tsx`, `src/client/App.tsx`.
 
-**Next:** [`08-raycast-and-edit.md`](./08-raycast-and-edit.md) — break and place blocks.
+**Next:** [`08-raycast-and-edit.md`](./08-raycast-and-edit.md) — break and place blocks. Or take
+the detour through [`07B-rapier-physics.md`](./07B-rapier-physics.md) *(optional)* for rigid-body
+physics, and why the player you just built deliberately isn't using it.

@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "server": "tsx watch src/server/index.ts",
     "start": "tsx src/server/index.ts",
-    "checkpoint": "node scripts/checkpoint.mjs"
+    "checkpoint": "node scripts/checkpoint.mjs",
+    "make-assets": "node scripts/make-assets.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.3",
