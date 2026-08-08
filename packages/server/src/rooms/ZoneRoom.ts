@@ -8,7 +8,7 @@
  * sim) → projectiles → drops → health regen → trade expiry.
  */
 
-import { Client, Room } from "colyseus";
+import { Client, Room } from "@colyseus/core";
 import {
   Block,
   DROP_OF,
@@ -129,7 +129,10 @@ export class ZoneRoom extends Room<ZoneState> {
 
   async onCreate(options: ZoneRoomOptions) {
     this.service = options.service;
-    this.zoneId = options.zoneId && this.service.has(options.zoneId) ? options.zoneId : this.service.defaultZone();
+    this.zoneId =
+      options.zoneId && this.service.has(options.zoneId)
+        ? options.zoneId
+        : this.service.defaultZone();
     this.loaded = await this.service.acquire(this.zoneId);
 
     this.setState(new ZoneState());
@@ -147,14 +150,32 @@ export class ZoneRoom extends Room<ZoneState> {
       onHuskDeath: (x, y, z) => this.spawnDrop(x, y + 1, z, Block.Salvage),
     });
 
-    this.onMessage(MSG.input, (client, msgs: InputMsg[]) => this.handleInput(client, msgs));
-    this.onMessage(MSG.edit, (client, m: { p: number; b: number }) => this.handlePlace(client, m));
-    this.onMessage(MSG.hit, (client, m: { p: number }) => this.handleHit(client, m));
-    this.onMessage(MSG.throw, (client, m: { dx: number; dy: number; dz: number }) => this.handleThrow(client, m));
-    this.onMessage(MSG.attack, (client, m: { id: string }) => this.handleAttack(client, m));
-    this.onMessage(MSG.tradeOffer, (client, m) => this.handleTradeOffer(client, m));
-    this.onMessage(MSG.tradeAccept, (client, m: { id: string }) => this.handleTradeAccept(client, m));
-    this.onMessage(MSG.tradeDecline, (client, m: { id: string }) => this.handleTradeDecline(client, m));
+    this.onMessage(MSG.input, (client, msgs: InputMsg[]) =>
+      this.handleInput(client, msgs),
+    );
+    this.onMessage(MSG.edit, (client, m: { p: number; b: number }) =>
+      this.handlePlace(client, m),
+    );
+    this.onMessage(MSG.hit, (client, m: { p: number }) =>
+      this.handleHit(client, m),
+    );
+    this.onMessage(
+      MSG.throw,
+      (client, m: { dx: number; dy: number; dz: number }) =>
+        this.handleThrow(client, m),
+    );
+    this.onMessage(MSG.attack, (client, m: { id: string }) =>
+      this.handleAttack(client, m),
+    );
+    this.onMessage(MSG.tradeOffer, (client, m) =>
+      this.handleTradeOffer(client, m),
+    );
+    this.onMessage(MSG.tradeAccept, (client, m: { id: string }) =>
+      this.handleTradeAccept(client, m),
+    );
+    this.onMessage(MSG.tradeDecline, (client, m: { id: string }) =>
+      this.handleTradeDecline(client, m),
+    );
     this.onMessage(MSG.ping, (client, t: number) => client.send(MSG.pong, t));
   }
 
@@ -165,7 +186,16 @@ export class ZoneRoom extends Room<ZoneState> {
 
     const spawn = findSpawn(this.world.vz, this.joinCount++);
     const session: Session = {
-      phys: { x: spawn.x, y: spawn.y, z: spawn.z, vx: 0, vy: 0, vz: 0, grounded: false, swimming: false },
+      phys: {
+        x: spawn.x,
+        y: spawn.y,
+        z: spawn.z,
+        vx: 0,
+        vy: 0,
+        vz: 0,
+        grounded: false,
+        swimming: false,
+      },
       inputs: [],
       editTokens: { tokens: EDIT_BURST, last: Date.now() },
       simBudget: { simTime: 0, wallStart: Date.now() },
@@ -186,7 +216,8 @@ export class ZoneRoom extends Room<ZoneState> {
     s.hp = record.hp > 0 ? record.hp : PLAYER_MAX_HP;
     // restore persisted inventory (new players get the starter kit from the store)
     for (const [b, n] of Object.entries(record.inv)) s.inv.set(b, n);
-    if (s.inv.size === 0) for (const [b, n] of Object.entries(START_INVENTORY)) s.inv.set(b, n);
+    if (s.inv.size === 0)
+      for (const [b, n] of Object.entries(START_INVENTORY)) s.inv.set(b, n);
     this.state.players.set(client.sessionId, s);
 
     client.send(MSG.init, {
@@ -202,7 +233,8 @@ export class ZoneRoom extends Room<ZoneState> {
     this.sessions.delete(client.sessionId);
     this.state.players.delete(client.sessionId);
     for (const [id, t] of this.trades) {
-      if (t.from === client.sessionId || t.to === client.sessionId) this.trades.delete(id);
+      if (t.from === client.sessionId || t.to === client.sessionId)
+        this.trades.delete(id);
     }
   }
 
@@ -210,7 +242,8 @@ export class ZoneRoom extends Room<ZoneState> {
     for (const sid of this.sessions.keys()) this.persistPlayer(sid);
     for (const t of this.respawnTimers) clearTimeout(t);
     this.respawnTimers.clear();
-    if (testRoomRegistry.get(this.zoneId) === this) testRoomRegistry.delete(this.zoneId);
+    if (testRoomRegistry.get(this.zoneId) === this)
+      testRoomRegistry.delete(this.zoneId);
     this.service.release(this.zoneId);
   }
 
@@ -246,7 +279,12 @@ export class ZoneRoom extends Room<ZoneState> {
     s.inv.forEach((v, k) => {
       inv[k] = v;
     });
-    const record: PlayerRecord = { name: s.name, inv, hp: s.hp, lastZone: this.zoneId };
+    const record: PlayerRecord = {
+      name: s.name,
+      inv,
+      hp: s.hp,
+      lastZone: this.zoneId,
+    };
     this.service.store.save(session.pkey, record);
   }
 
@@ -294,7 +332,8 @@ export class ZoneRoom extends Room<ZoneState> {
       if (!s) continue;
       const budget = session.simBudget;
 
-      let allowance = ((now - budget.wallStart) / 1000) * 1.25 + 0.25 - budget.simTime;
+      let allowance =
+        ((now - budget.wallStart) / 1000) * 1.25 + 0.25 - budget.simTime;
       while (session.inputs.length > 0) {
         const input = session.inputs.shift()!;
         if (input.dt <= allowance) {
@@ -320,7 +359,13 @@ export class ZoneRoom extends Room<ZoneState> {
   private simulateProjectiles(now: number) {
     const impacts = this.physics.step(TICK_MS / 1000);
     for (const impact of impacts) {
-      this.damageVoxel(impact.vx, impact.vy, impact.vz, PROJECTILE_DAMAGE, null);
+      this.damageVoxel(
+        impact.vx,
+        impact.vy,
+        impact.vz,
+        PROJECTILE_DAMAGE,
+        null,
+      );
     }
     for (const [id, pb] of this.physics.projectiles) {
       const s = this.state.projectiles.get(id);
@@ -353,7 +398,10 @@ export class ZoneRoom extends Room<ZoneState> {
         const dx = d.x - p.x;
         const dy = d.y - (p.y + 0.9);
         const dz = d.z - p.z;
-        if (dx * dx + dy * dy + dz * dz <= DROP_PICKUP_RADIUS * DROP_PICKUP_RADIUS) {
+        if (
+          dx * dx + dy * dy + dz * dz <=
+          DROP_PICKUP_RADIUS * DROP_PICKUP_RADIUS
+        ) {
           const s = this.state.players.get(sid);
           if (s) invAdd(s, d.b, 1);
           this.state.drops.delete(id);
@@ -384,7 +432,13 @@ export class ZoneRoom extends Room<ZoneState> {
     for (const [sid, session] of this.sessions) {
       const s = this.state.players.get(sid);
       if (!s || s.hp <= 0) continue;
-      out.push({ sid, x: session.phys.x, y: session.phys.y, z: session.phys.z, hp: s.hp });
+      out.push({
+        sid,
+        x: session.phys.x,
+        y: session.phys.y,
+        z: session.phys.z,
+        hp: s.hp,
+      });
     }
     return out;
   }
@@ -421,13 +475,25 @@ export class ZoneRoom extends Room<ZoneState> {
   findHuskSpawn(): { x: number; y: number; z: number } | null {
     const vz = this.world.vz;
     for (let i = 0; i < 40; i++) {
-      const x = 4 + Math.floor(hash01(this.projSeq, i, Date.now() & 0xffff) * (vz.sizeX - 8));
-      const z = 4 + Math.floor(hash01(i, this.projSeq, (Date.now() >> 4) & 0xffff) * (vz.sizeZ - 8));
+      const x =
+        4 +
+        Math.floor(
+          hash01(this.projSeq, i, Date.now() & 0xffff) * (vz.sizeX - 8),
+        );
+      const z =
+        4 +
+        Math.floor(
+          hash01(i, this.projSeq, (Date.now() >> 4) & 0xffff) * (vz.sizeZ - 8),
+        );
       const sy = surfaceY(vz, x, z);
       if (sy <= vz.waterLevel) continue;
       const ground = getVoxel(vz, x, sy, z);
       if (!isSolid(ground) || ground === Block.Water) continue;
-      if (getVoxel(vz, x, sy + 1, z) !== Block.Air || getVoxel(vz, x, sy + 2, z) !== Block.Air) continue;
+      if (
+        getVoxel(vz, x, sy + 1, z) !== Block.Air ||
+        getVoxel(vz, x, sy + 2, z) !== Block.Air
+      )
+        continue;
       let tooClose = false;
       for (const session of this.sessions.values()) {
         if (Math.hypot(session.phys.x - x, session.phys.z - z) < 18) {
@@ -457,9 +523,18 @@ export class ZoneRoom extends Room<ZoneState> {
     const husk = m?.id ? this.creatures.husks.get(m.id) : null;
     const target =
       husk ??
-      this.creatures.nearestHusk(session.phys.x, session.phys.y + PLAYER.eyeHeight, session.phys.z, MELEE_RANGE);
+      this.creatures.nearestHusk(
+        session.phys.x,
+        session.phys.y + PLAYER.eyeHeight,
+        session.phys.z,
+        MELEE_RANGE,
+      );
     if (!target) return;
-    const d = Math.hypot(target.phys.x - session.phys.x, target.phys.y - session.phys.y, target.phys.z - session.phys.z);
+    const d = Math.hypot(
+      target.phys.x - session.phys.x,
+      target.phys.y - session.phys.y,
+      target.phys.z - session.phys.z,
+    );
     if (d > MELEE_RANGE + HUSK_MELEE_RANGE) return;
     this.creatures.damage(target.id, MELEE_DAMAGE);
   }
@@ -484,7 +559,14 @@ export class ZoneRoom extends Room<ZoneState> {
     const s = this.state.players.get(sid);
     if (!session || !s) return;
     const spawn = findSpawn(this.world.vz, this.joinCount++);
-    Object.assign(session.phys, { x: spawn.x, y: spawn.y, z: spawn.z, vx: 0, vy: 0, vz: 0 });
+    Object.assign(session.phys, {
+      x: spawn.x,
+      y: spawn.y,
+      z: spawn.z,
+      vx: 0,
+      vy: 0,
+      vz: 0,
+    });
     s.hp = PLAYER_MAX_HP;
     session.lastDamageAt = Date.now();
   }
@@ -496,7 +578,10 @@ export class ZoneRoom extends Room<ZoneState> {
     if (!session) return false;
     const tb = session.editTokens;
     const now = Date.now();
-    tb.tokens = Math.min(EDIT_BURST, tb.tokens + ((now - tb.last) / 1000) * EDIT_REFILL_PER_S);
+    tb.tokens = Math.min(
+      EDIT_BURST,
+      tb.tokens + ((now - tb.last) / 1000) * EDIT_REFILL_PER_S,
+    );
     tb.last = now;
     if (tb.tokens < 1) return false;
     tb.tokens -= 1;
@@ -514,7 +599,10 @@ export class ZoneRoom extends Room<ZoneState> {
   }
 
   private reject(client: Client, p: number) {
-    client.send(MSG.reject, [p, getVoxel(this.world.vz, unpackX(p), unpackY(p), unpackZ(p))]);
+    client.send(MSG.reject, [
+      p,
+      getVoxel(this.world.vz, unpackX(p), unpackY(p), unpackZ(p)),
+    ]);
   }
 
   private handlePlace(client: Client, m: { p: number; b: number }) {
@@ -554,13 +642,20 @@ export class ZoneRoom extends Room<ZoneState> {
     this.damageVoxel(x, y, z, 1, client);
   }
 
-  private handleThrow(client: Client, m: { dx: number; dy: number; dz: number }) {
+  private handleThrow(
+    client: Client,
+    m: { dx: number; dy: number; dz: number },
+  ) {
     const session = this.sessions.get(client.sessionId);
     if (!session) return;
     const now = Date.now();
     if (now - session.lastThrow < THROW_COOLDOWN_MS) return;
     const p = session.phys;
-    const len = Math.hypot(Number(m?.dx) || 0, Number(m?.dy) || 0, Number(m?.dz) || 0);
+    const len = Math.hypot(
+      Number(m?.dx) || 0,
+      Number(m?.dy) || 0,
+      Number(m?.dz) || 0,
+    );
     if (!len) return;
     session.lastThrow = now;
 
@@ -589,7 +684,13 @@ export class ZoneRoom extends Room<ZoneState> {
     this.state.projectiles.set(id, ps);
   }
 
-  private damageVoxel(x: number, y: number, z: number, amount: number, byClient: Client | null) {
+  private damageVoxel(
+    x: number,
+    y: number,
+    z: number,
+    amount: number,
+    byClient: Client | null,
+  ) {
     const b = getVoxel(this.world.vz, x, y, z);
     if (!isSolid(b)) return;
     const need = HARDNESS[b];
@@ -605,7 +706,9 @@ export class ZoneRoom extends Room<ZoneState> {
   }
 
   private breakBlock(x: number, y: number, z: number, prev: number) {
-    const isNode = this.world.isNodeCell(x, y, z) && prev === this.world.baselineBlock(x, y, z);
+    const isNode =
+      this.world.isNodeCell(x, y, z) &&
+      prev === this.world.baselineBlock(x, y, z);
     this.commitEdit(x, y, z, Block.Air);
 
     if (isNode) {
@@ -636,7 +739,12 @@ export class ZoneRoom extends Room<ZoneState> {
     }
   }
 
-  private scheduleNodeRespawn(x: number, y: number, z: number, nodeBlock: number) {
+  private scheduleNodeRespawn(
+    x: number,
+    y: number,
+    z: number,
+    nodeBlock: number,
+  ) {
     const timer = setTimeout(() => {
       this.respawnTimers.delete(timer);
       // only regrow if nobody has built over the cell
@@ -647,7 +755,12 @@ export class ZoneRoom extends Room<ZoneState> {
   }
 
   private runSupportCheck(seeds: Array<[number, number, number]>) {
-    const falling = collectUnsupported(this.world.vz, this.world.pack.terrain, seeds, SUPPORT_BUDGET);
+    const falling = collectUnsupported(
+      this.world.vz,
+      this.world.pack.terrain,
+      seeds,
+      SUPPORT_BUDGET,
+    );
     if (falling.length === 0) return;
     const pairs: number[] = [];
     let drops = 0;
@@ -672,7 +785,12 @@ export class ZoneRoom extends Room<ZoneState> {
     this.broadcast(MSG.edits, [p, b]);
   }
 
-  private spawnDropFor(x: number, y: number, z: number, brokenBlock: number): boolean {
+  private spawnDropFor(
+    x: number,
+    y: number,
+    z: number,
+    brokenBlock: number,
+  ): boolean {
     const yields = DROP_OF[brokenBlock];
     if (!yields) return false;
     this.spawnDrop(x, y, z, yields);
@@ -711,7 +829,10 @@ export class ZoneRoom extends Room<ZoneState> {
 
   // ---------------- trading ----------------
 
-  private handleTradeOffer(client: Client, m: { give?: { b: number; n: number }; want?: { b: number; n: number } }) {
+  private handleTradeOffer(
+    client: Client,
+    m: { give?: { b: number; n: number }; want?: { b: number; n: number } },
+  ) {
     const from = this.sessions.get(client.sessionId);
     const fromS = this.state.players.get(client.sessionId);
     if (!from || !fromS) return;
@@ -778,7 +899,10 @@ export class ZoneRoom extends Room<ZoneState> {
       return;
     }
     // both sides solvent?
-    if (invGet(fromS, trade.give.b) < trade.give.n || invGet(toS, trade.want.b) < trade.want.n) {
+    if (
+      invGet(fromS, trade.give.b) < trade.give.n ||
+      invGet(toS, trade.want.b) < trade.want.n
+    ) {
       this.tradeResult(trade, false, "insufficient goods");
       return;
     }
@@ -792,7 +916,11 @@ export class ZoneRoom extends Room<ZoneState> {
 
   private handleTradeDecline(client: Client, m: { id: string }) {
     const trade = this.trades.get(m?.id);
-    if (!trade || (trade.to !== client.sessionId && trade.from !== client.sessionId)) return;
+    if (
+      !trade ||
+      (trade.to !== client.sessionId && trade.from !== client.sessionId)
+    )
+      return;
     this.trades.delete(trade.id);
     this.tradeResult(trade, false, "declined");
   }

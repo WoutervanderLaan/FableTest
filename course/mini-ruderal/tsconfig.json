@@ -6,6 +6,7 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
     "jsx": "react-jsx",
     "strict": true,
+    "types": ["node"],
     "noUncheckedIndexedAccess": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,

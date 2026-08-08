@@ -14,8 +14,7 @@
     "@colyseus/schema": "^3.0.76",
     "@colyseus/ws-transport": "~0.16.5",
     "@dimforge/rapier3d-compat": "^0.19.3",
-    "@ruderal/shared": "workspace:*",
-    "colyseus": "^0.16.5"
+    "@ruderal/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
