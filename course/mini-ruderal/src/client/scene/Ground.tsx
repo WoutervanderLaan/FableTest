@@ -6,7 +6,7 @@ export const Ground = () => {
 
   return (
     <mesh receiveShadow geometry={geometry}>
-      <meshStandardMaterial color={"#00ff55"} />
+      <meshStandardMaterial vertexColors />
     </mesh>
   );
 };
