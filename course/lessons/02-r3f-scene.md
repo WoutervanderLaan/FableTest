@@ -159,4 +159,6 @@ pnpm dev
 Files: `src/client/App.tsx`, `src/client/main.tsx`.
 
 **Next:** [`03-geometry-by-hand.md`](./03-geometry-by-hand.md) — stop using `BoxGeometry`
-and build meshes from raw vertex buffers, the way the voxel engine will.
+and build meshes from raw vertex buffers, the way the voxel engine will. Or spend an hour on
+[`02B-devtools-and-camera.md`](./02B-devtools-and-camera.md) first — a debug panel and a proper
+inspection camera, which every later module is easier with.
