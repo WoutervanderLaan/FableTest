@@ -89,6 +89,7 @@ them on your first pass and come back to push one topic toward full-Ruderal fide
 ### Part 1 — Three.js & R3F foundations
 - **01 · Three.js from scratch** — scene, camera, renderer, mesh, render loop (no React).
 - **02 · The same scene in R3F** — `<Canvas>`, declarative meshes, `useFrame`, `useThree`.
+- **02B · Devtools — a debug panel & an inspection camera** — a selection-aware control panel where adding a slider is one line, plus orbit/pan/zoom/WASD camera with frame-rate-independent damping. Everything after this is tuned against it.
 - **03 · Geometry by hand** — `BufferGeometry`: positions, normals, colors, indices. The foundation of everything voxel.
 - **04 · Light, shadow, fog & sky** — a directional sun with shadows, hemisphere fill, fog, a sky dome.
 
@@ -116,6 +117,8 @@ scene: loading art somebody authored. Skip them if you only care about the voxel
 - **09C · Shader math II — noise, SDFs & warping** — hashing → value noise → fbm → domain warping; signed distance fields, `smin`, dithering.
 - **10 · The sky-dome shader** — a real gradient sky with a warm sun glow.
 - **11 · Patching materials (`onBeforeCompile`)** — per-voxel color jitter + instanced, wind-swayed grass.
+- **11B · An "infinite" grass field** — triangle blades on a camera-following grid, hashed from world position so it never boils; gusting wind, backlit translucency, tilted normals.
+- **11C · Bushes from leaf cards** — Fibonacci-sphere placement, a deformed volume, the sphere-normal lighting trick, an SDF leaf silhouette, and seeds for diversity.
 - **12 · Postprocessing** — `EffectComposer` with Bloom, Vignette, Noise.
 - **12D · Shader techniques** *(deep-dive)* — translucent water, a fresnel rim, noise fields.
 - **12E · WebGPU & TSL** — the same scene on `WebGPURenderer`; module 10's sky rewritten as a node graph, with the honest trade-offs.

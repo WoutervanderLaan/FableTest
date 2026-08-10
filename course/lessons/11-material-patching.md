@@ -138,4 +138,6 @@ pnpm dev
 Files: `src/client/scene/materials.ts`, `src/client/scene/Vegetation.tsx`, `src/client/App.tsx`.
 
 **Next:** [`12-postprocessing.md`](./12-postprocessing.md) — grade the whole image with
-bloom, vignette, and grain.
+bloom, vignette, and grain. Or push the vegetation much further first:
+[`11B-infinite-grass.md`](./11B-infinite-grass.md) turns this module's grass patch into an
+endless field, and [`11C-bushes.md`](./11C-bushes.md) grows bushes out of leaf cards.
