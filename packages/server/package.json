@@ -7,15 +7,14 @@
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx test/integration.ts"
+    "test": "RUDERAL_TEST=1 HUSK_CAP=0 NODE_RESPAWN_MS=800 tsx test/integration.ts"
   },
   "dependencies": {
     "@colyseus/core": "~0.16.24",
     "@colyseus/schema": "^3.0.76",
     "@colyseus/ws-transport": "~0.16.5",
     "@dimforge/rapier3d-compat": "^0.19.3",
-    "@ruderal/shared": "workspace:*",
-    "colyseus": "^0.16.5"
+    "@ruderal/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

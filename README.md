@@ -1,10 +1,12 @@
 # RUDERAL — a location-derived block world
 
 A persistent, shared, walkable voxel world derived from real geospatial data.
-The current build is the **Westerkerk / Jordaan quarter of Amsterdam** — canals,
-quays, bridges, houseboats, street trees, and ~1,500 real building footprints
-as weathered, moss-grown ruins — as a **multiplayer shared canvas**: place and
-break blocks together, watch unsupported structures collapse, throw things.
+Two **Amsterdam** zones ship today — the dense **Westerkerk / Jordaan** canal
+ruins (salvage-rich) and the overgrown **Vondelpark** (biomass-rich) — as a
+**multiplayer survival-building world**: place and break blocks together, watch
+unsupported structures collapse, harvest regenerating resource nodes drawn from
+the real land use, trade with other players, travel between zones carrying your
+inventory, and fend off husks that hunt you and besiege what you build.
 
 The aesthetic is **Ruderal Futurism**: post-apocalyptic but optimistic. The
 rigid voxel grid is the damage; soft, grid-ignoring life is the hope.
@@ -16,13 +18,15 @@ pnpm install
 pnpm dev        # starts BOTH the zone server (:2567) and the client (vite)
 ```
 
-Open the client, pick a name, enter. WASD moves, shift runs, space jumps
-(swims up in canals). **Hold LMB** to break (blocks have durability),
-**RMB** places from your inventory, **Q** throws, **1–5** select material.
-Structures need a path to the ground: break the base and the rest falls.
+Pick a name and a zone, enter. WASD moves, shift runs, space jumps (swims up in
+canals). **Hold LMB** breaks (blocks have durability), **RMB** places from your
+inventory, **Q** throws, **F** strikes creatures, **1–5** select material,
+**T** opens a trade with the nearest player, **M** travels to another zone.
+Structures need a path to the ground: break the base and the rest falls. Urban
+ruins yield salvage; parks yield biomass; harvested nodes regrow over time.
 
-The world is persistent: the server journals every edit and reconstructs
-baseline+edits on restart (`packages/server/data/`).
+The world is persistent: the server journals every edit, saves per-player
+inventories, and reconstructs zones on demand (`packages/server/data/`).
 
 ## Tests
 
@@ -30,10 +34,13 @@ baseline+edits on restart (`packages/server/data/`).
 pnpm test   # integration suite: real server + real websocket clients
 ```
 
-Covers: join/movement propagation with server-authoritative simulation and
-input acking, edit propagation + reject rollback, multi-hit durability,
-support-lattice collapse with drops, projectile impact damage, and byte-exact
-world reconstruction across a server restart.
+36 checks across all four phases: server-authoritative movement + input acking,
+edit propagation + reject rollback, durability, support-lattice collapse,
+projectile impact, **multi-zone isolation + hibernation**, **resource-node
+harvest with multi-drop + regeneration**, **atomic player-to-player trading**,
+**cross-zone inventory persistence**, **husk combat (chase / melee / death /
+loot) and structure siege**, and byte-exact world reconstruction across a
+server restart.
 
 ## Architecture
 
@@ -44,28 +51,35 @@ world reconstruction across a server restart.
   prediction and server authority**, DDA raycast, support lattice, protocol.
 - `packages/baker` — offline pipeline: Overture Maps GeoParquet + AWS Terrain
   Tiles → versioned `zonepack` (~64 KB gzipped for 512×512 m of Amsterdam).
-- `packages/server` — authoritative Colyseus zone server. 20 Hz simulation of
-  client inputs through the shared collider, 10 Hz snapshots, validated edits
-  (reach/rate/rules/inventory), Rapier (voxels collider) for server-owned
-  projectiles, support-lattice collapse, append-only edit journal.
+- `packages/server` — authoritative multi-zone Colyseus server. A `ZoneService`
+  loads worlds on demand and **hibernates** them when empty (one process hosts
+  many zones; a zone nobody visits costs only its journal on disk, and wakes up
+  with its resource nodes regrown). Per zone: 20 Hz simulation of client inputs
+  through the shared collider, 10 Hz snapshots, validated edits, Rapier voxels
+  collider for projectiles, support-lattice collapse, resource-node harvest with
+  scheduled respawn, atomic proximity trading, and husk AI (`CreatureManager` —
+  creatures reuse the *same* shared movement step players do). A `PlayerStore`
+  persists per-player inventory + health keyed by a stable client key, so
+  inventory survives rejoin and travels between zones.
 - `packages/client` — Vite + React Three Fiber. Imperative chunk layer fed by
   a mesher worker pool; client-side prediction with rewind-replay
-  reconciliation; ~120 ms interpolation for remote players; optimistic edits
-  with confirm/timeout/reject rollback; lazy client Rapier for cosmetic
-  collapse debris.
+  reconciliation; ~120 ms interpolation for remote players and husks; optimistic
+  edits with confirm/timeout/reject rollback; lazy client Rapier for cosmetic
+  collapse debris; zone-select + travel + trade overlays; health/combat HUD.
 
-Colyseus schema carries only small state (players, projectiles, drops); voxel
-data never crosses the wire except as compact edit pairs.
+Colyseus schema carries only small state (players, husks, projectiles, drops);
+voxel data never crosses the wire except as compact edit pairs.
 
-### Re-bake the zone
+### Re-bake / add a zone
 
 ```sh
-./packages/baker/scripts/fetch-overture.sh   # Overture GeoJSON via uv/pyarrow
-pnpm bake
+./packages/baker/scripts/fetch-overture.sh <minLon,minLat,maxLon,maxLat> <zoneId>
+pnpm bake            # bakes all zones in packages/baker/src/index.ts
+pnpm bake <zoneId>   # or just one
 ```
 
-Change the `ZoneSpec` in `packages/baker/src/index.ts` (and the fetch bbox)
-to bake a different place on Earth.
+Add an entry to `ZONES` in `packages/baker/src/index.ts` to bake a different
+place on Earth; the merged `zones.json` manifest drives the in-game zone list.
 
 ## Data sources & licensing
 
@@ -75,5 +89,6 @@ to bake a different place on Earth.
 
 ## Deliberately not here yet
 
-Economy/trading, creatures, alliances, multiple zones, accounts (identity is
-a display name), mobile. Those are Phases 3–5 of the project plan.
+Alliances/social structures, accounts with real identity (identity is a bearer
+key + display name), and mobile. Those are the remaining Phase-4 social layer
+and Phase 5 of the project plan.

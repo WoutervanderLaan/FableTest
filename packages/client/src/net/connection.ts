@@ -7,8 +7,14 @@
 import { Client, type Room } from "colyseus.js";
 import { MSG, ROOM_NAME, type InputMsg } from "@ruderal/shared";
 
+export interface Stack {
+  b: number;
+  n: number;
+}
+
 export interface InitPayload {
   id: string;
+  zoneId: string;
   spawn: { x: number; y: number; z: number };
   edits: number[];
 }
@@ -19,11 +25,29 @@ export interface DamageMsg {
   need: number;
 }
 
+export interface TradeIncoming {
+  id: string;
+  from: string;
+  fromName: string;
+  give: Stack;
+  want: Stack;
+}
+
+export interface TradeResult {
+  id: string;
+  ok: boolean;
+  reason?: string;
+}
+
 type EventMap = {
   edits: number[];
   reject: number[];
   collapse: number[];
   damage: DamageMsg;
+  hurt: { hp: number };
+  died: Record<string, never>;
+  tradeIncoming: TradeIncoming;
+  tradeResult: TradeResult;
   leave: number;
 };
 
@@ -35,6 +59,10 @@ export class Net {
     reject: new Set(),
     collapse: new Set(),
     damage: new Set(),
+    hurt: new Set(),
+    died: new Set(),
+    tradeIncoming: new Set(),
+    tradeResult: new Set(),
     leave: new Set(),
   };
 
@@ -44,9 +72,9 @@ export class Net {
     readonly init: InitPayload,
   ) {}
 
-  static async join(url: string, name: string): Promise<Net> {
+  static async join(url: string, name: string, zoneId: string, pkey: string): Promise<Net> {
     const client = new Client(url);
-    const room = await client.joinOrCreate(ROOM_NAME, { name });
+    const room = await client.joinOrCreate(ROOM_NAME, { name, zoneId, pkey });
     const init = await new Promise<InitPayload>((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error("server sent no init payload")), 10000);
       room.onMessage(MSG.init, (payload: InitPayload) => {
@@ -60,6 +88,10 @@ export class Net {
     room.onMessage(MSG.reject, (pairs: number[]) => net.emit("reject", pairs));
     room.onMessage(MSG.collapse, (pairs: number[]) => net.emit("collapse", pairs));
     room.onMessage(MSG.damage, (m: DamageMsg) => net.emit("damage", m));
+    room.onMessage(MSG.hurt, (m: { hp: number }) => net.emit("hurt", m));
+    room.onMessage(MSG.died, () => net.emit("died", {}));
+    room.onMessage(MSG.tradeIncoming, (m: TradeIncoming) => net.emit("tradeIncoming", m));
+    room.onMessage(MSG.tradeResult, (m: TradeResult) => net.emit("tradeResult", m));
     room.onMessage(MSG.pong, (t: number) => {
       net.latencyMs = Math.round(performance.now() - t);
     });
@@ -93,6 +125,22 @@ export class Net {
 
   throwProjectile(dx: number, dy: number, dz: number): void {
     this.room.send(MSG.throw, { dx, dy, dz });
+  }
+
+  attack(id: string): void {
+    this.room.send(MSG.attack, { id });
+  }
+
+  tradeOffer(give: Stack, want: Stack): void {
+    this.room.send(MSG.tradeOffer, { give, want });
+  }
+
+  tradeAccept(id: string): void {
+    this.room.send(MSG.tradeAccept, { id });
+  }
+
+  tradeDecline(id: string): void {
+    this.room.send(MSG.tradeDecline, { id });
   }
 
   leave(): void {

@@ -1,0 +1,4 @@
+# This file marks mini-ruderal as its OWN pnpm root, so `pnpm install` here
+# installs only this app and does NOT get pulled into the parent Ruderal
+# monorepo workspace. (An empty package list = "just this project".)
+packages: []

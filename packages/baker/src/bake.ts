@@ -121,14 +121,14 @@ function sliceLine(pts: Array<[number, number]>, t0: number, t1: number): Array<
   return out;
 }
 
-export function bakeZone(spec: ZoneSpec, opts: BakeOptions): void {
+export function bakeZone(spec: ZoneSpec, opts: BakeOptions): ZoneManifestEntry {
   const size = spec.sizeMeters;
   const grid = { sizeX: size, sizeZ: size };
   const n = size * size;
   const seed = hashString(spec.id);
 
   const load = (name: string): GeoCollection =>
-    JSON.parse(readFileSync(join(opts.dataDir, "overture", `${name}.geojson`), "utf8")) as GeoCollection;
+    JSON.parse(readFileSync(join(opts.dataDir, "overture", spec.id, `${name}.geojson`), "utf8")) as GeoCollection;
   const buildings = load("building");
   const waterFc = load("water");
   const landUse = load("land_use");
@@ -356,14 +356,6 @@ export function bakeZone(spec: ZoneSpec, opts: BakeOptions): void {
   mkdirSync(opts.outDir, { recursive: true });
   const outFile = join(opts.outDir, `${spec.id}.zpk.gz`);
   writeFileSync(outFile, gz);
-  writeFileSync(
-    join(opts.outDir, "zones.json"),
-    JSON.stringify(
-      { zones: [{ id: spec.id, name: spec.name, file: `${spec.id}.zpk.gz` }] },
-      null,
-      2,
-    ),
-  );
 
   const waterCells = water.reduce((a, b) => a + b, 0);
   const buildingCells = buildingId.reduce((a, b) => a + (b > 0 ? 1 : 0), 0);
@@ -375,4 +367,26 @@ export function bakeZone(spec: ZoneSpec, opts: BakeOptions): void {
       `\n  trees: ${treeCells.size}  terrain y: ${minTerrain}–${maxTerrain}` +
       `\n  → ${outFile} (${(gz.length / 1024).toFixed(0)} KB gz, ${(raw.length / 1024).toFixed(0)} KB raw)`,
   );
+
+  return {
+    id: spec.id,
+    name: spec.name,
+    file: `${spec.id}.zpk.gz`,
+    blurb: spec.blurb ?? "",
+    centerLon: spec.centerLon,
+    centerLat: spec.centerLat,
+    waterPct: Math.round((1000 * waterCells) / n) / 10,
+    buildingPct: Math.round((1000 * buildingCells) / n) / 10,
+  };
+}
+
+export interface ZoneManifestEntry {
+  id: string;
+  name: string;
+  file: string;
+  blurb: string;
+  centerLon: number;
+  centerLat: number;
+  waterPct: number;
+  buildingPct: number;
 }

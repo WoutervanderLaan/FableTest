@@ -132,6 +132,12 @@ export class ZonePhysics {
     this.projectiles.delete(id);
   }
 
+  /** Free the Rapier world when a zone hibernates. */
+  dispose(): void {
+    this.events.free();
+    this.world.free();
+  }
+
   /** Step the world; returns first-impacts (one per projectile lifetime). */
   step(dtSeconds: number): Impact[] {
     this.world.timestep = dtSeconds;
